@@ -1,0 +1,7 @@
+{
+  "agent_id": "agent_6701m4z4v1yse9trknt37anvj31f",
+  "name": "SAVE — QS review assistant",
+  "client_tools": ["get_claim_difference", "show_item_evidence", "propose_assessment_change", "prepare_assessment_report"],
+  "allowed_hosts": ["save-qs-assessment.wittyfern13.chatgpt.site", "localhost", "127.0.0.1"],
+  "notes": "Agent IDs are public identifiers. No API keys are stored in this project. Changes require a human click in the app."
+}
