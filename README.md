@@ -59,3 +59,8 @@ One row per unique physical door. `unit` must be `nr`. `claimed` and `previously
 ## Verification
 
 Core tests cover opening reconciliation, approval deltas, duplicate evidence, prior-period correction, missing evidence, quoted CSV imports, duplicate IDs, rate consistency, unsafe links and units, formula-safe CSV output, and decimal-rate arithmetic. Browser checks and live-agent checks are recorded in the task handoff.
+
+
+## Apple design update
+
+This interface applies [Emil Kowalski’s apple-design skill](https://github.com/emilkowalski/skills/tree/main/skills/apple-design), a design reference rather than an Apple-authored component library. The reusable implementation is in `src/apple-design.css` and `src/apple-motion.js`. It uses system typography (SF on Apple devices), opaque content panels, translucent navigation, size-specific tracking, immediate press feedback, and Motion 14 spring dialog transitions. Reduced motion, transparency, and higher contrast preferences have dedicated fallbacks. SAVE branding and the QS review logic are retained. No Apple assets or proprietary fonts are bundled.

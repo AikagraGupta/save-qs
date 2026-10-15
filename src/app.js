@@ -1,4 +1,6 @@
 import './style.css';
+import './apple-design.css';
+import { presentDialog, dismissDialog } from './apple-motion.js';
 import { createDemo, validateProject, totals, money, gaps, assess, explanation, importRegister, registerCSV, valuationCSV, id, reviewReason } from './core.js';
 import { loadProject, saveProject } from './storage.js';
 import { icon, doorArt } from './art.js';
@@ -31,7 +33,7 @@ function render(){
  el.innerHTML=`<div class="app-shell ${voiceOpen?'with-assistant':''}">
  <aside class="sidebar"><a class="brand" href="#" data-action="nav-review"><span class="brand-mark">s<span>↗</span></span><span>SAVE<small>ACCESSIBLE QS</small></span></a>
  <div class="project-selector"><span class="building-icon">H</span><span>${esc(project.name)}<small>${esc(project.scope)}</small></span></div>
- <span class="nav-label">WORKSPACE</span><nav aria-label="Workspace">${nav.map(([v,i,label])=>`<button data-action="nav-${v}" class="nav-link ${view===v?'active':''}">${icon(i)}${label}${v==='review'?`<span class="nav-count">${t.reviewCount}</span>`:''}</button>`).join('')}</nav>
+ <span class="nav-label">WORKSPACE</span><nav aria-label="Workspace">${nav.map(([v,i,label])=>`<button data-action="nav-${v}" class="nav-link ${view===v?'active':''}" ${view===v?'aria-current="page"':''}>${icon(i)}${label}${v==='review'?`<span class="nav-count">${t.reviewCount}</span>`:''}</button>`).join('')}</nav>
  <div class="sidebar-bottom"><button class="nav-link" data-action="walkthrough">${icon('spark')}Demo walkthrough</button><button class="nav-link ${view==='settings'?'active':''}" data-action="nav-settings">${icon('settings')}Project settings</button><div class="local-state"><i></i>${saveError?'Save needs attention':'Saved in this browser'}</div><div class="profile"><span>AC</span><div>${esc(project.reviewer.split('·')[0])}<small>QS reviewer · prototype</small></div></div></div></aside>
  <div class="workspace"><header class="topbar"><div class="breadcrumb">${esc(project.name)} ${icon('chevron')} <b>${({review:'Payment review',evidence:'Site evidence',report:'Assessment report',history:'Review history',changes:'Variations',settings:'Project settings'})[view]}</b></div><div class="top-actions"><span class="demo-tag">${project.isDemo?'SAMPLE PROJECT':'BROWSER WORKSPACE'}</span><button class="icon-button mobile-settings" data-action="nav-settings" aria-label="Open settings">${icon('settings')}</button>${button('Ask SAVE','toggle-voice','button subtle','mic')}${button('Add evidence','add-evidence','button primary','plus')}</div></header>
  <main id="main" tabindex="-1">${({review:reviewView,evidence:evidenceView,report:reportView,history:historyView,changes:changesView,settings:settingsView})[view]()}</main>
@@ -43,10 +45,10 @@ function render(){
 function pageHeading(eyebrow,title,desc,actions=''){return`<div class="page-heading"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="heading-actions">${actions}</div></div>`;}
 function reviewView(){
  const t=totals(project),item=currentItem();
- return pageHeading(`VALUATION ${esc(project.previousCertificate.replace('009','010'))} / ${esc(project.period)}`,'A clearer view of what’s due.','Connect the claim to the work. Review the difference, with the evidence beside you.',button('View report','nav-report','button outline','file'))+
+ return pageHeading(`VALUATION ${esc(project.previousCertificate.replace('009','010'))} / ${esc(project.period)}`,'Payment review','Review the claim. See the evidence. Understand what’s due.',button('View report','nav-report','button outline','file'))+
  `<div class="metrics">${metric('Contractor’s claim',money(t.claim),`${t.claimed} doors · cumulative`)}${metric('QS assessment',money(t.assessed),`${t.approved} doors · cumulative`)}${metric(t.difference<0?'Above claimed amount':'Difference to review',money(Math.abs(t.difference)),`${t.unresolved} pending · ${t.rejected} not accepted`,'highlight')}</div>
  <div class="period-line"><span>${icon('clock')}Previously certified <b>${money(t.previous)}</b></span><span>Proposed this period <b>${money(t.current)}</b> ${icon('arrow')}</span><button data-action="explain-basis">Gross value · what’s included?</button></div>
- <div class="review-layout"><section class="panel register-panel"><div class="panel-title"><h2>Door register <span>${project.items.length}</span></h2>${button('Import','import','text-button','upload')}</div><div class="list-controls"><div class="segmented" aria-label="Filter records">${[['pending','Needs review'],['all','All doors'],['approved','Approved']].map(([v,l])=>`<button class="${filter===v?'selected':''}" data-action="filter" data-value="${v}">${l}${v==='pending'?` <b>${t.reviewCount}</b>`:''}</button>`).join('')}</div><label class="search-field">${icon('search')}<input id="register-search" aria-label="Search door or room" placeholder="Find a door or room" value="${esc(search)}"></label></div><div id="door-list">${doorList()}</div></section>
+ <div class="review-layout"><section class="panel register-panel"><div class="panel-title"><h2>Door register <span>${project.items.length}</span></h2>${button('Import','import','text-button','upload')}</div><div class="list-controls"><div class="segmented" aria-label="Filter records">${[['pending','Needs review'],['all','All doors'],['approved','Approved']].map(([v,l])=>`<button class="${filter===v?'selected':''}" data-action="filter" data-value="${v}" aria-pressed="${filter===v}">${l}${v==='pending'?` <b>${t.reviewCount}</b>`:''}</button>`).join('')}</div><label class="search-field">${icon('search')}<input id="register-search" aria-label="Search door or room" placeholder="Find a door or room" value="${esc(search)}"></label></div><div id="door-list">${doorList()}</div></section>
  <section class="panel evidence-detail" id="evidence-detail">${itemDetail(item)}</section></div>
  ${note('A missing photo means “not verified”, not “not installed”. Check the evidence before changing an assessment.')}`;
 }
@@ -83,8 +85,17 @@ function renderMessages(){const feed=document.querySelector('#assistant-feed');i
 function addMessage(role,text){messages.push({role,text});renderMessages();}
 function navigate(v){view=v;render();window.scrollTo({top:0});}
 function openItem(itemId,target='review'){const item=byId(itemId);if(!item)throw new Error(`No record found for ${itemId}.`);selected=itemId;selectedEvidence=0;view=target;render();}
-function modal(title,body,cls=''){document.querySelector('#modal-root').innerHTML=`<dialog class="modal ${cls}"><div class="modal-heading"><h2>${title}</h2><button class="icon-button" data-action="close-modal" aria-label="Close dialog">${icon('x')}</button></div>${body}</dialog>`;const d=document.querySelector('dialog');d.showModal();d.addEventListener('click',e=>{if(e.target===d)d.close();});}
-function closeModal(){document.querySelector('dialog')?.close();document.querySelector('#modal-root').innerHTML='';proposal=null;}
+function modal(title,body,cls=''){
+ document.querySelector('#modal-root').innerHTML=`<dialog class="modal ${cls}" aria-labelledby="dialog-title"><div class="modal-heading"><h2 id="dialog-title">${title}</h2><button class="icon-button" data-action="close-modal" aria-label="Close dialog">${icon('x')}</button></div>${body}</dialog>`;
+ const d=document.querySelector('dialog');d.showModal();presentDialog(d);
+ d.addEventListener('click',e=>{if(e.target===d)closeModal();});
+ d.addEventListener('cancel',e=>{e.preventDefault();closeModal();});
+}
+function closeModal(){
+ const d=document.querySelector('dialog');proposal=null;
+ dismissDialog(d,()=>{if(d?.isConnected){d.close();d.remove();}});
+}
+
 function reviewModal(itemId,status='',reason=''){
  const item=byId(itemId);if(!item)throw new Error('Choose a registered door.');selected=itemId;
  proposal={itemId,status:status||item.status,reason};
