@@ -1,4 +1,4 @@
-import { totals, explanation, money, gaps, reviewReason } from './core.js';
+import { totals, explanation, money, gaps, reviewReason, reportItems } from './core.js';
 import { jsPDF } from 'jspdf';
 
 export function downloadFile(name, content, type='text/plain') {
@@ -6,9 +6,25 @@ export function downloadFile(name, content, type='text/plain') {
 }
 export async function makePDF(p) {
  const pdf=new jsPDF({unit:'mm',format:'a4'}), t=totals(p);let y=24;
- const clean=s=>String(s).replace(/[\u2013\u2014]/g,'-').replace(/[^\x20-\x7E\n]/g,'');
+ const clean=s=>String(s).replace(/[\u2013\u2014]/g,'-').replace(/[\u0000-\u0008\u000B-\u001F]/g,'');
  const header=title=>{pdf.setFillColor(18,43,41);pdf.rect(0,0,210,12,'F');pdf.setFont('helvetica','bold');pdf.setFontSize(20);pdf.setTextColor(18,43,41);pdf.text(title,18,27);y=40;};
- const text=(s,size=10,bold=false)=>{pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);const lines=pdf.splitTextToSize(clean(s),174);for(const l of lines){if(y>270){pdf.addPage();header('SAVE / Assessment continued');}pdf.text(l,18,y);y+=size*.47;}y+=3;};
+ // jsPDF's built-in Helvetica cannot encode CJK. Render those lines with the
+ // browser's system fonts instead of silently removing names and evidence notes.
+ const text=(s,size=10,bold=false)=>{
+   const content=clean(s),unicode=/[^\x20-\x7E\n]/.test(content);
+   pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);
+   if(!unicode){for(const l of pdf.splitTextToSize(content,174)){if(y>270){pdf.addPage();header('SAVE / Assessment continued');pdf.setFont('helvetica',bold?'bold':'normal');pdf.setFontSize(size);}pdf.text(l,18,y);y+=size*.47;}}
+   else {
+     const pxPerMm=96/25.4,fontPx=size*96/72,scale=3;
+     const measure=document.createElement('canvas').getContext('2d');measure.font=`${bold?'600':'400'} ${fontPx}px system-ui, sans-serif`;
+     const lines=[];for(const paragraph of content.split('\n')){let line='';for(const char of Array.from(paragraph)){if(line&&measure.measureText(line+char).width>174*pxPerMm){lines.push(line);line='';}line+=char;}lines.push(line);}
+     for(const line of lines){if(y>266){pdf.addPage();header('SAVE / Assessment continued');}
+       if(line){const canvas=document.createElement('canvas');canvas.width=Math.ceil((measure.measureText(line).width+4)*scale);canvas.height=Math.ceil(fontPx*1.5*scale);const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.font=measure.font;ctx.fillStyle='#122b29';ctx.textBaseline='top';ctx.fillText(line,0,0);pdf.addImage(canvas,'PNG',18,y-fontPx*.78/pxPerMm,canvas.width/scale/pxPerMm,canvas.height/scale/pxPerMm);}
+       y+=Math.max(size*.47,fontPx*1.5/pxPerMm);
+     }
+   }
+   y+=3;
+ };
  header('SAVE / Draft payment assessment');
  text(`${p.name} | ${p.period} | ${p.scope}`,11,true);
  text(`Valuation date: ${p.valuationDate}   Reviewer: ${p.reviewer}`);
@@ -19,7 +35,7 @@ export async function makePDF(p) {
  for(const l of t.lines) text(`${l.id} - ${l.description}\n${l.approved} approved x ${money(l.rate)} = ${money(l.assessedValue)} cumulative. Less ${money(l.previousValue)} previously certified = ${money(l.currentValue)} this period.`);
  text('Basis: approved complete units only. No partial-stage weights. Retention, variations and other adjustments excluded. This is not a certificate or an instruction to pay.',9);
  pdf.addPage();header('Unresolved items and decisions');
- for(const item of p.items.filter(i=>i.claimed&&i.status!=='approved'))text(`${item.id} | ${item.floor}, ${item.zone}, Room ${item.room}\n${item.status.toUpperCase()}: ${reviewReason(item)}\nEvidence checks: ${gaps(item,p).join('; ')||'QS confirmation required'}`);
+ for(const item of reportItems(p))text(`${item.id} | ${item.floor}, ${item.zone}, Room ${item.room}\n${item.status.toUpperCase()}: ${reviewReason(item)}\nEvidence checks: ${gaps(item,p).join('; ')||'QS confirmation required'}`);
  text('Recent review history',13,true);
  for(const h of p.history.slice(0,15)) text(`${new Date(h.at).toLocaleString('en-HK',{timeZone:'Asia/Hong_Kong'})} | ${h.actor} | ${h.itemId||h.type}\n${h.note}`,9);
  const evidenced=p.items.filter(i=>i.evidence.some(e=>e.data));
