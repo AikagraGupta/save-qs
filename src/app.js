@@ -13,7 +13,7 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const date=v=>v?new Date(v).toLocaleString('en-HK',{timeZone:'Asia/Hong_Kong',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'Not reviewed';
 let project, view='review', selected='D-017', filter='pending', search='', selectedEvidence=0, proposal=null, saveError=false;
-let session=null, connecting=false, messages=[], voiceMode='', agentId=localStorage.getItem('save-agent-id')??'agent_6701m4z4v1yse9trknt37anvj31f';
+let session=null, connecting=false, messages=[], voiceMode='', agentId=localStorage.getItem('save-agent-id')??(import.meta.env.VITE_ELEVENLABS_AGENT_ID||'agent_6701m4z4v1yse9trknt37anvj31f');
 let voiceOpen=window.matchMedia('(min-width:1121px)').matches, sessionTimer=null;
 const byId=id=>project.items.find(i=>i.id===id);
 const bqFor=item=>project.bq.find(b=>b.id===item.bqId);

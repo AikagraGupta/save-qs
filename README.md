@@ -1,13 +1,13 @@
 # SAVE — Accessible QS
 
-A functional browser-based prototype of evidence submission, door-by-door payment assessment, claim reconciliation, voice-assisted review and export.
+A functional browser-based app for evidence submission, door-by-door payment assessment, claim reconciliation, voice-assisted review and export. Deploy it directly from GitHub to Vercel; see [DEPLOYMENT.md](DEPLOYMENT.md) for setup and data migration.
 
 ## Run
 
-Node.js 22.12+ (or 24+) is recommended.
+Use Node.js 24.x, matching Vercel and GitHub Actions.
 
 ```sh
-npm install
+npm ci
 npm run dev
 npm test
 npm run build
@@ -26,13 +26,13 @@ The sample project has 60 uniquely registered doors, 55 claimed, 50 approved and
 
 ## ElevenLabs
 
-A SAVE agent is configured as the default; its public ID is in `.openai/elevenlabs-agent.json`. No API keys are in this project.
+A SAVE agent is configured as the default. Its public ID can be overridden with `VITE_ELEVENLABS_AGENT_ID` at build time or in Project settings. No API keys are in this project.
 
 - **Start voice review** starts a microphone session with ElevenLabs. Browser microphone permission and network connectivity are needed.
 - **Connect agent chat** uses the same agent and tools without microphone access. It is useful for verifying tool calling.
 - The session ends after five minutes to bound accidental usage. The account's usual ElevenLabs costs and quotas apply.
 - The agent receives a structured project summary and the results of requested tools. Uploaded image bytes are not sent by the voice tools. Keep sensitive data out of a demo unless you intend to share its summarized records with ElevenLabs.
-- The default allowed hosts are the deployed Site hostname, localhost and 127.0.0.1. An embed in a different domain requires an ElevenLabs allowlist update.
+- The production hostname must be allowed in ElevenLabs. Preview URLs and custom domains need their own allowlist entries. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Client tools are `get_claim_difference`, `show_item_evidence`, `propose_assessment_change`, and `prepare_assessment_report`. They retrieve data, navigate, or prepare a dialog. There is no agent tool that confirms an assessment or issues a payment. The QS must click the visible confirmation.
 
@@ -48,7 +48,7 @@ One row per unique physical door. `unit` must be `nr`. `claimed` and `previously
 
 ## Prototype boundaries
 
-- Project data is saved in IndexedDB in this browser. There is no shared project database, authentication, user roles or tamper-proof audit trail. The private Site controls access to the hosted page, not reviewer identity within a browser.
+- Project data is saved in IndexedDB in this browser. There is no shared project database, authentication, user roles or tamper-proof audit trail. Vercel does not inherit the previous host’s ChatGPT sign-in. Hosting access controls do not establish the identity of a QS reviewer within a browser.
 - Photographs are uploaded and reviewed. Automatic recognition, identity resolution, location mapping and measurement are **not** implemented. The door-to-BQ link is the imported/register mapping. The floor layout is a labelled schematic.
 - Sample pictures are original synthetic SVG illustrations and are labelled as such. They are not site observations.
 - All assessed units use a binary approved/full-unit basis. Partial stages can be recorded, but no invented stage percentages are applied.
