@@ -1,5 +1,9 @@
 # Deploying SAVE
 
+- Production: https://save-accessible-qs.vercel.app
+- Private GitHub repository: https://github.com/AikagraGupta/save-qs
+- Vercel project: `aikagras-projects/save-accessible-qs`
+
 The repository root is the Vercel project root. No monorepo root-directory setting is needed.
 
 ## Vercel settings
@@ -40,3 +44,7 @@ Browser storage is separated by origin. On the previous website, open Project se
 This is a usable single-browser review app. It has no server database, shared project synchronization, reviewer authentication, automatic photo interpretation or automatic extraction from raw BQ PDFs. It accepts a prepared register and stores data in IndexedDB. The Vercel website does not inherit the previous host's ChatGPT sign-in. Use Vercel deployment protection when private page access is required.
 
 PDFs and CSVs are draft gross assessments for countable units, not payment certificates. Variations are tracked separately and excluded from the calculation. JSON backups preserve all uploaded evidence; the PDF annex is limited to the first 20 photographed item records and two uploaded images per record.
+
+## Deployment verification — 23 October 2026
+
+All 18 tests and the production build passed locally and in GitHub Actions. The production hostname returned HTTP 200 with the configured security headers. A live ElevenLabs text session connected from the Vercel hostname and called `get_claim_difference`, returning the actual HK$100,000 assessed value and five pending records. The production hostname was added to the agent allowlist while preserving the earlier hostname and local development entries. Microphone audio was not captured during this verification.
